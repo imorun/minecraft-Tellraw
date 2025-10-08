@@ -77,6 +77,12 @@ button:hover {
 #preview span:hover .hoverPopup {
   display: block;
 }
+.footer { 
+  text-align: center; 
+  color: #5a5; 
+  margin-top: 5px; 
+  font-size: 0.9em; 
+}
 </style>
 </head>
 <body>
@@ -121,8 +127,8 @@ button:hover {
 
   <h3>生成コマンド</h3>
   <textarea id="output" rows="10" readonly></textarea>
+  <div class="footer">Project by imorun</div>
 </div>
-
 <script>
 const entriesDiv = document.getElementById("entries");
 document.getElementById("addText").onclick = addTextEntry;
