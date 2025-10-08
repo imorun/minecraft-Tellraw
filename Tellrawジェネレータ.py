@@ -1,0 +1,268 @@
+import webview
+
+# ===============================
+# index.html の内容を文字列として埋め込む
+# ===============================
+html_content = """
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>🧱 Tellrawジェネレーター（Java・統合版対応）</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%235a5'/><text x='50' y='75' font-size='70' text-anchor='middle' fill='white' font-family='M PLUS Rounded 1c'>T</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500&display=swap');
+body {
+  background: #1b1b1b;
+  color: #ddd;
+  font-family: "M PLUS Rounded 1c", sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+.container {
+  background: #2a2a2a;
+  padding: 20px;
+  border-radius: 15px;
+  width: 800px;
+  border: 3px solid #5a5;
+}
+h1 { color: #6f6; }
+input, select, textarea, button {
+  font-family: inherit;
+  border: 1px solid #5a5;
+  border-radius: 5px;
+  background: #1a1a1a;
+  color: #eee;
+  margin: 5px;
+  padding: 6px;
+}
+button {
+  background: #333;
+  color: #5a5;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover {
+  background: #5a5;
+  color: #111;
+}
+.text-entry {
+  background: #333;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 8px 0;
+}
+#preview {
+  background: #111;
+  border-radius: 8px;
+  border: 2px solid #5a5;
+  padding: 10px;
+  min-height: 50px;
+  font-family: monospace;
+}
+#preview span {
+  padding: 2px 5px;
+  border-radius: 3px;
+  position: relative;
+}
+.hoverPopup {
+  display: none;
+  position: absolute;
+  top: -120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  border: 2px solid #5a5;
+  border-radius: 8px;
+  padding: 4px 8px;
+  white-space: pre-line;
+  z-index: 10;
+}
+#preview span:hover .hoverPopup {
+  display: block;
+}
+.footer { 
+  text-align: center; 
+  color: #5a5; 
+  margin-top: 5px; 
+  font-size: 0.9em; 
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧱 Tellrawジェネレーター（Java・統合版対応）</h1>
+
+  <label>バージョン:</label>
+  <select id="version">
+    <option value="bedrock">統合版</option>
+    <option value="java">Java版</option>
+  </select><br>
+
+  <label><input type="checkbox" id="showPlayer" checked> プレイヤー名を表示</label><br>
+  <div id="playerSettings">
+    <label>プレイヤー名：</label>
+    <input type="text" id="playerName" value="">
+    <label>色：</label>
+    <select id="playerColor">
+      <option value="">色なし</option>
+      <option value="black">黒</option>
+      <option value="white">白</option>
+      <option value="yellow">黄</option>
+      <option value="gold">金</option>
+      <option value="aqua">水色</option>
+      <option value="green">緑</option>
+      <option value="red">赤</option>
+      <option value="light_purple">紫</option>
+      <option value="blue">青</option>
+      <option value="gray">灰</option>
+      <option value="dark_gray">暗灰</option>
+      <option value="dark_red">暗赤</option>
+    </select>
+  </div>
+
+  <div id="entries"></div>
+  <button id="addText">＋ テキスト追加</button>
+  <button id="generate">📜 コマンド生成</button>
+  <button id="copyBtn">📋 コピー</button>
+
+  <h3>プレビュー</h3>
+  <div id="preview"></div>
+
+  <h3>生成コマンド</h3>
+  <textarea id="output" rows="10" readonly></textarea>
+  <div class="footer">Project by imorun</div>
+</div>
+<script>
+const entriesDiv = document.getElementById("entries");
+document.getElementById("addText").onclick = addTextEntry;
+
+function addTextEntry() {
+  const div = document.createElement("div");
+  div.className = "text-entry";
+  div.innerHTML = `
+    <label>テキスト:</label> <input type="text" class="text" placeholder="メッセージ">
+    <label>色:</label>
+    <select class="color">
+      <option value="">色なし</option>
+      <option value="black">黒</option>
+      <option value="white">白</option>
+      <option value="yellow">黄</option>
+      <option value="gold">金</option>
+      <option value="aqua">水色</option>
+      <option value="green">緑</option>
+      <option value="red">赤</option>
+      <option value="light_purple">紫</option>
+      <option value="blue">青</option>
+      <option value="gray">灰</option>
+      <option value="dark_gray">暗灰</option>
+      <option value="dark_red">暗赤</option>
+    </select>
+    <label>クリックアクション:</label>
+    <select class="click">
+      <option value="">なし</option>
+      <option value="run_command">コマンド実行</option>
+      <option value="open_url">URLを開く</option>
+    </select>
+    <input type="text" class="clickValue" placeholder="クリック時の値">
+    <label>ホバー説明:</label>
+    <input type="text" class="hover" placeholder="ホバー時のテキスト">
+    <button onclick="this.parentNode.remove()">削除</button>
+  `;
+  entriesDiv.appendChild(div);
+}
+
+document.getElementById("generate").onclick = () => {
+  const showPlayer = document.getElementById("showPlayer").checked;
+  const playerName = document.getElementById("playerName").value || "Player";
+  const playerColor = document.getElementById("playerColor").value;
+  const version = document.getElementById("version").value;
+  const elements = [];
+  const preview = document.getElementById("preview");
+  const output = document.getElementById("output");
+  preview.innerHTML = "";
+
+  // プレイヤー名追加
+  if (showPlayer) {
+    const playerObj = { text: `<${playerName}> ` };
+    if (playerColor) playerObj.color = playerColor;
+    elements.push(playerObj);
+  }
+
+  // 各テキスト部分
+  for (const div of document.querySelectorAll(".text-entry")) {
+    const text = div.querySelector(".text").value;
+    const color = div.querySelector(".color").value;
+    const click = div.querySelector(".click").value;
+    const clickValue = div.querySelector(".clickValue").value;
+    const hover = div.querySelector(".hover").value;
+    if (!text) continue;
+
+    const obj = { text };
+    if (color) obj.color = color;
+    if (click) obj.clickEvent = { action: click, value: clickValue };
+    if (hover) obj.hoverEvent = { action: "show_text", value: hover };
+    elements.push(obj);
+  }
+
+  // プレビュー
+  preview.innerHTML = "";
+  for (const e of elements) {
+    const span = document.createElement("span");
+    span.textContent = e.text;
+    if (e.color) span.style.color = e.color;
+    if (e.clickEvent) {
+      span.style.textDecoration = "underline";
+      span.style.cursor = "pointer";
+      if (e.clickEvent.action === "open_url") {
+        span.onclick = () => window.open(e.clickEvent.value, "_blank");
+      } else {
+        span.onclick = () => alert("コマンド: " + e.clickEvent.value);
+      }
+    }
+    if (e.hoverEvent) {
+      const hoverDiv = document.createElement("div");
+      hoverDiv.className = "hoverPopup";
+      hoverDiv.textContent = e.hoverEvent.value;
+      span.appendChild(hoverDiv);
+    }
+    preview.appendChild(span);
+  }
+
+  // コマンド生成
+  let cmd;
+  if (version === "bedrock") {
+    cmd = `/tellraw @a {"rawtext":${JSON.stringify(elements, null, 2)}}`;
+  } else {
+    cmd = `/tellraw @a ${JSON.stringify(elements, null, 2)}`;
+  }
+  output.value = cmd;
+};
+
+// コピー機能
+document.getElementById("copyBtn").onclick = () => {
+  const out = document.getElementById("output");
+  out.select();
+  navigator.clipboard.writeText(out.value);
+  alert("コマンドをコピーしました！");
+};
+
+// プレイヤー名ON/OFF切替
+document.getElementById("showPlayer").addEventListener("change", (e) => {
+  document.getElementById("playerSettings").style.display = e.target.checked ? "block" : "none";
+});
+
+// 初期行
+addTextEntry();
+</script>
+</body>
+</html>
+"""
+
+# ===============================
+# WebView ウィンドウ作成
+# ===============================
+webview.create_window("Tellrawジェネレーター", html=html_content, width=900, height=700)
+webview.start()
